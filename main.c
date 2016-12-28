@@ -18,5 +18,6 @@ int main(int argc, char** argv) {
 	printf("%f %f\n", s[0], s[11]);
 	step();
 	printf("%f %f\n", s[0], s[11]);
+	data_print(d);
 	return 0;
 }
