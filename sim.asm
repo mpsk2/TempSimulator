@@ -1,6 +1,6 @@
 	; Michał Piotr Stankiewicz <ms335789@students.mimuw.edu.pl>
-	global start, step, get_width, get_height, get_fields, get_warmers, get_coolers, get_weight
-	extern malloc
+	global start, step, get_width, get_height, get_fields, get_warmers, get_coolers, get_weight, get_second
+	extern malloc, memcpy
 	section .data
 width	dq	0
 height	dq	0
@@ -9,7 +9,7 @@ warmers	dq	0
 coolers	dq	0
 weight	dq	0
 second	dq	0			; array used to make simulation
-
+size	dq	0			; size of second array, used by memcpy
 	section .text
 
 start:
@@ -24,12 +24,19 @@ start:
 	mul	rdi			; mul width by sizeof(int64_t)
 	mul	rsi			; mul width * sizeof(int64_t) by height
 	mov	rdi, rax		; move value to rdx, so it is first argument
+	mov	[size], rdi		; store size
 	call 	malloc			; allocate sizeof(int64_t) * width * height
 	mov	[second], rax		; store pointer to allocated memory in second
 	; allocate second array
 	
 	ret
 step:
+	; copy values to second array, operations will be made on fields array, but we need 
+	; second to store old values
+	mov	rdi, [second]		; first  argument - destination
+	mov	rsi, [fields]		; second argument - source
+	mov	rdx, [size]		; third  argument - size
+	call	memcpy			; copy data from fields to second
 	ret
 get_width:
 	mov	rax, [width]
@@ -48,5 +55,8 @@ get_coolers:
 	ret
 get_weight:
 	movq	xmm0, [weight]
+	ret
+get_second:
+	mov	rax, [second]
 	ret
 

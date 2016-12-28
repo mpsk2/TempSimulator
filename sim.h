@@ -12,5 +12,6 @@ float* get_fields();
 float* get_warmers();
 float* get_coolers();
 float get_weight();
+float* get_second();
 
 #endif
