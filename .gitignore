@@ -1,3 +1,9 @@
+# Vim
+*.swp
+
+# Executable
+temp_sim
+
 # Object files
 *.o
 *.ko
