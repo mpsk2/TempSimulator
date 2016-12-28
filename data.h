@@ -15,5 +15,6 @@ data_t* data_init(int64_t, int64_t);
 void data_print_fields(data_t*);
 void data_print(data_t*);
 data_t* data_file_read(char*);
+void data_start(data_t*, float);
 
 #endif

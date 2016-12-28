@@ -3,6 +3,7 @@
 
 # Executable
 temp_sim
+test
 
 # Object files
 *.o

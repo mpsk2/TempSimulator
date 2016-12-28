@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "data.h"
+#include "sim.h"
 
 data_t* data_init(int64_t width, int64_t height) {
 	data_t* result = (data_t*) malloc(sizeof(data_t));
@@ -56,4 +57,8 @@ data_t* data_file_read(char* filename) {
 		fscanf(file, "%f", &result->coolers[i]);
 	}
 	return result;
+}
+
+void data_start(data_t* d, float weight) {
+	start(d->width, d->height, d->fields, d->warmers, d->coolers, weight);
 }
