@@ -10,12 +10,8 @@ OBJ_E=$(OBJ) main.o
 OBJ_T=$(OBJ) test.o
 
 EXECUTABLE=temp_sim
-TEST=test
 
-all: $(EXECUTABLE) $(TEST)
-
-$(TEST): $(OBJ_T)
-		gcc $(OBJ_T) $(LFLAGS) -o $(TEST)
+all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJ_E)
 		gcc $(OBJ_E) $(LFLAGS) -o $(EXECUTABLE)
@@ -27,5 +23,5 @@ $(EXECUTABLE): $(OBJ_E)
 		$(AS) $(ASFLAGS) $<	
 
 clean:
-		rm -rf *.o $(EXECUTABLE) $(TEST)
+		rm -rf *.o $(EXECUTABLE)
 
