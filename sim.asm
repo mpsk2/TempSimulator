@@ -1,5 +1,5 @@
 	; Michał Piotr Stankiewicz <ms335789@students.mimuw.edu.pl>
-	global start, step, get_width, get_height, get_fields, get_warmers, get_coolers, get_weight, get_second
+	global start, step
 	extern malloc, memcpy
 	section .data
 width	dq	0
@@ -37,15 +37,13 @@ step:
 	call	memcpy			; copy data from fields to second
 	push	r15			; counter for height
 	push	r14			; counter for width
-	push	r13			; counter for arrays
 	push	r12			; addr of field
 	push	r11			; addr of second
 	push	r10			; addr of coolers
 	
-	; calculate array index and fields/second addr
-	mov	r13, [width]
-	imul	r13, [height]
-	mov	r12, r13
+	; calculate and fields/second addr
+	mov	r12, [width]
+	imul	r12, [height]
 	imul	r12, 4
 	mov	r11, r12
 	add	r11, [second]
@@ -56,9 +54,23 @@ step:
 	imul	r10, [height]
 	add	r10, [coolers]
 
-	; sore max width in rax
+	; store max width in rax
 	mov	rax, [width]
 	sub	rax, 1
+	
+	; store max height in rdi
+	mov	rdi, [height]
+	sub	rdi, 1
+	
+	; store last warmers values
+	; rsi - upper
+	; rdx - lower
+	; rcx - line lenght * sizeof (float)
+	mov 	rsi, 4
+	imul	rsi, [width]
+	mov	rcx, rsi
+	add	rsi, [warmers]
+	mov	rdx, rsi
 	
 	; loops
 	mov	r15, [height]		; mov height to r15
@@ -68,7 +80,6 @@ height_loop:				; were to jump at height loop
 	sub	r10, 4			; substract sizeof(float) from warmers add counter
 width_loop:				; were to jump at width loop
 	sub	r14, 1			; substract 1 from width counter
-	sub	r13, 1			; substract 1 from arrays counter
 	sub	r12, 4			; substract sizeof(float) from field addr
 	sub	r11, 4			; substract sizeof(float) from second addr
 
@@ -96,6 +107,29 @@ right_max:
 	addss	xmm0, [r10]
 right_end:
 
+	; below we will have up and down situation
+	cmp	r15, 0
+	jle	up_zero
+	sub	r11, rcx
+	addss	xmm0, [r11]
+	add	r11, rcx
+	jmp	up_end
+up_zero:
+	sub	rsi, 4
+	addss	xmm0, [rsi]
+up_end:
+
+	cmp	r15, rdi
+	jge	down_max
+	add	r11, rcx
+	addss	xmm0, [r11]
+	sub	r11, rcx
+	jmp	down_end
+down_max:
+	sub	rdx, 4
+	addss	xmm0, [rdx]
+down_end:
+
 	subss	xmm0, [r11]
 	subss	xmm0, [r11]
 	subss	xmm0, [r11]
@@ -113,29 +147,6 @@ right_end:
 	pop	r10			; restore r10
 	pop	r11			; restore r11
 	pop	r12			; restore r12
-	pop	r13			; restore r13
 	pop	r14			; restore r14			
 	pop	r15			; restore r15
 	ret
-get_width:
-	mov	rax, [width]
-	ret
-get_height:
-	mov	rax, [height]
-	ret
-get_fields:
-	mov	rax, [fields]
-	ret
-get_warmers:
-	mov	rax, [warmers]
-	ret
-get_coolers:
-	mov	rax, [coolers]
-	ret
-get_weight:
-	movq	xmm0, [weight]
-	ret
-get_second:
-	mov	rax, [second]
-	ret
-

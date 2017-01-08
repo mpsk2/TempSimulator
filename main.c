@@ -3,17 +3,33 @@
 #include "data.h"
 #include "sim.h"
 
+void validate_entry(int);
+
 int main(int argc, char** argv) {
-	if (argc < 2) {
-		fprintf(stderr, "Filename not provided\n");
-		exit(1);
+	switch (argc) {
+		case 1:
+			fprintf(stderr, "Filename not provided\n");
+		case 2:
+			fprintf(stderr, "Weight not provided\n");
+		case 3:
+			fprintf(stderr, "Steps number not provided\n");
+			exit(1);
+			break;
 	}
-	data_t* d = data_file_read(argv[1]);
-	data_print(d);
-	data_start(d, 5);
-	step();
-	data_print(d);
-	step();
-	data_print(d);
+	char* filename = argv[1];
+	float weight = atof(argv[2]);
+	int steps = atoi(argv[3]);
+	data_t* d = data_file_read(filename);
+	data_print_fields(d);
+	data_start(d, weight);
+	while (steps) {
+		int c;
+		do {
+			c = getchar();
+		} while(c != '\n') ;
+		step();
+		data_print_fields(d);
+		steps--;
+	}
 	return 0;
 }
