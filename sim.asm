@@ -40,6 +40,7 @@ step:
 	push	r13			; counter for arrays
 	push	r12			; addr of field
 	push	r11			; addr of second
+	push	r10			; addr of coolers
 	
 	; calculate array index and fields/second addr
 	mov	r13, [width]
@@ -49,12 +50,22 @@ step:
 	mov	r11, r12
 	add	r11, [second]
 	add	r12, [fields]
+
+	; calculate last cooler addr
+	mov	r10, 4
+	imul	r10, [height]
+	add	r10, [coolers]
+
+	; sore max width in rax
+	mov	rax, [width]
+	sub	rax, 1
 	
 	; loops
 	mov	r15, [height]		; mov height to r15
 height_loop:				; were to jump at height loop
 	sub	r15, 1			; substract 1 from height counter
 	mov	r14, [width]		; mov width to r14
+	sub	r10, 4			; substract sizeof(float) from warmers add counter
 width_loop:				; were to jump at width loop
 	sub	r14, 1			; substract 1 from width counter
 	sub	r13, 1			; substract 1 from arrays counter
@@ -64,7 +75,26 @@ width_loop:				; were to jump at width loop
 	pxor	xmm0, xmm0		; make xmm0 a 0 value
 
 	; here will be the left one
-	; if width counter > 0 then fields[index-1] else warmer[height counter]
+	; if width counter > 0 then fields[index-1] else coolers[height counter]
+
+	cmp	r14, 0			; compare width counter to 0 - if yes we get value from coolers, if no we get value from fields
+	jle	left_zero
+	addss	xmm0, [r11-4]
+	jmp	left_end
+left_zero:
+	addss	xmm0, [r10]
+left_end:
+
+	; here will be the right one
+	; if width < max_width - 1 fields[index+1] else coolers[height counter]
+
+	cmp	r14, rax
+	jge	right_max
+	addss	xmm0, [r11+4]
+	jmp	right_end
+right_max:
+	addss	xmm0, [r10]
+right_end:
 
 	subss	xmm0, [r11]
 	subss	xmm0, [r11]
@@ -80,6 +110,7 @@ width_loop:				; were to jump at width loop
 	jnz	width_loop		; if yes make one more iteration of width loop
 	cmp	r15, 0			; compare height counter to 0
 	jnz	height_loop		; if yes make one more iteration of height loop
+	pop	r10			; restore r10
 	pop	r11			; restore r11
 	pop	r12			; restore r12
 	pop	r13			; restore r13
