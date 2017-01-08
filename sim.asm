@@ -35,31 +35,56 @@ step:
 	mov	rsi, [fields]		; second argument - source
 	mov	rdx, [size]		; third  argument - size
 	call	memcpy			; copy data from fields to second
-	; calculate index - index is width_counter + height_counter * width, we will go 
-	; from max to 0
-	mov	rdx, [size]		; well it is already calculated
-	add	rdx, [fields]		; add fields, so now rdx store address to fields[width*height]
-	; iteration - store to counters
-	mov	rdi, [height]		; store height in rdi
-height_step:
-	sub	rdi, 1			; substract 1 from height counter
-	mov	rsi, [width]		; store width in rsi
-width_step:
-	sub	rsi, 1			; substract 1 from height counter
-	sub	rdx, 4			; we substract 1 index (64 bits)
-	; we will calculate that way
-	; mov 0 to [fields + rdx]
-	; mov every diff from neighbours to [fields + rdx]
-	; mul it by weight
-	; move value there
-	; go back to width_step if width counter not 0
-	fldz				; store 0
-	fstp	dword [rdx]
-	cmp	rsi, 0			; compare width counter to 0
-	jnz	width_step		; jump if not zero
-	; go back to height_step if height counter not 0
-	cmp	rdi, 0			; compare height counter to 0
-	jnz	height_step		; jump if not 0
+	push	r15			; counter for height
+	push	r14			; counter for width
+	push	r13			; counter for arrays
+	push	r12			; addr of field
+	push	r11			; addr of second
+	
+	; calculate array index and fields/second addr
+	mov	r13, [width]
+	imul	r13, [height]
+	mov	r12, r13
+	imul	r12, 4
+	mov	r11, r12
+	add	r11, [second]
+	add	r12, [fields]
+	
+	; loops
+	mov	r15, [height]		; mov height to r15
+height_loop:				; were to jump at height loop
+	sub	r15, 1			; substract 1 from height counter
+	mov	r14, [width]		; mov width to r14
+width_loop:				; were to jump at width loop
+	sub	r14, 1			; substract 1 from width counter
+	sub	r13, 1			; substract 1 from arrays counter
+	sub	r12, 4			; substract sizeof(float) from field addr
+	sub	r11, 4			; substract sizeof(float) from second addr
+
+	pxor	xmm0, xmm0		; make xmm0 a 0 value
+
+	; here will be the left one
+	; if width counter > 0 then fields[index-1] else warmer[height counter]
+
+	subss	xmm0, [r11]
+	subss	xmm0, [r11]
+	subss	xmm0, [r11]
+	subss	xmm0, [r11]
+
+	mulss	xmm0, [weight]		; multiply change by weight
+
+	addss	xmm0, [r11]		; at finale we add old value
+	movd	[r12], xmm0		; move calculated value to fields
+
+	cmp	r14, 0			; compare width counter to 0
+	jnz	width_loop		; if yes make one more iteration of width loop
+	cmp	r15, 0			; compare height counter to 0
+	jnz	height_loop		; if yes make one more iteration of height loop
+	pop	r11			; restore r11
+	pop	r12			; restore r12
+	pop	r13			; restore r13
+	pop	r14			; restore r14			
+	pop	r15			; restore r15
 	ret
 get_width:
 	mov	rax, [width]
