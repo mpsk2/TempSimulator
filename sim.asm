@@ -42,10 +42,10 @@ step:
 	push	r10			; addr of coolers
 	
 	; calculate and fields/second addr
-	mov	r12, [width]
-	imul	r12, [height]
-	imul	r12, 4
-	mov	r11, r12
+	mov	r12, [width]		; store width
+	imul	r12, [height]		; multiply by height, so we have height * width
+	imul	r12, 4			; multiply by sizeof(float), so we have height * width * sizeof(float)
+	mov	r11, r12		; make copy for second array
 	add	r11, [second]
 	add	r12, [fields]
 
@@ -90,50 +90,50 @@ width_loop:				; were to jump at width loop
 
 	cmp	r14, 0			; compare width counter to 0 - if yes we get value from coolers, if no we get value from fields
 	jle	left_zero
-	addss	xmm0, [r11-4]
-	jmp	left_end
+	addss	xmm0, [r11-4]		; add old value that is to the left
+	jmp	left_end		; end that if brach
 left_zero:
-	addss	xmm0, [r10]
+	addss	xmm0, [r10]		; add value at coolers array at same height
 left_end:
-
+	subss	xmm0, [r11]		; add old value
+	
 	; here will be the right one
 	; if width < max_width - 1 fields[index+1] else coolers[height counter]
 
 	cmp	r14, rax
 	jge	right_max
-	addss	xmm0, [r11+4]
-	jmp	right_end
+	addss	xmm0, [r11+4]		; add old value that is to the right
+	jmp	right_end		; end that if brach
 right_max:
-	addss	xmm0, [r10]
+	addss	xmm0, [r10]		; add value at coolers array at same height
 right_end:
-
+	subss	xmm0, [r11]		; add old value
+	
 	; below we will have up and down situation
-	cmp	r15, 0
-	jle	up_zero
-	sub	r11, rcx
-	addss	xmm0, [r11]
-	add	r11, rcx
-	jmp	up_end
+	cmp	r15, 0			; check if it is heighest line
+	jle	up_zero			; if is jump to that if branch
+	sub	r11, rcx		; go to that line up
+	addss	xmm0, [r11]		; add that value
+	add	r11, rcx		; go back to old line
+	jmp	up_end			; end that if brach
 up_zero:
-	sub	rsi, 4
-	addss	xmm0, [rsi]
+	sub	rsi, 4			; we substract sizeof(float) from addr at warmers array
+	addss	xmm0, [rsi]		; add that value from warmers
 up_end:
-
-	cmp	r15, rdi
-	jge	down_max
-	add	r11, rcx
-	addss	xmm0, [r11]
-	sub	r11, rcx
-	jmp	down_end
-down_max:
-	sub	rdx, 4
-	addss	xmm0, [rdx]
+	subss	xmm0, [r11]		; add old value
+	
+	cmp	r15, rdi		; check if that is lowest line
+	jge	down_max		; if it is lowest line jump to where lowest line is being taken care
+	add	r11, rcx		; add line to index
+	addss	xmm0, [r11]		; add value that is below
+	sub	r11, rcx		; go back to old index
+	jmp	down_end		; end that if brach
+down_max:				; case in witch it is lowest line
+	sub	rdx, 4			; we substract sizeof(float) from addr at warmers array
+	addss	xmm0, [rdx]		; we add that value to new value
 down_end:
-
-	subss	xmm0, [r11]
-	subss	xmm0, [r11]
-	subss	xmm0, [r11]
-	subss	xmm0, [r11]
+	subss	xmm0, [r11]		; add old value
+	
 
 	mulss	xmm0, [weight]		; multiply change by weight
 
